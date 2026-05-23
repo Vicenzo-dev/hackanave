@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hacka Nav - Hub Central</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght=700;900&family=Poppins:wght=300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-deep: #130924; 
@@ -27,16 +27,17 @@
             color: var(--text-white);
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column; /* Alterado para permitir rolagem natural */
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
             transition: var(--transition);
+            position: relative;
         }
 
         body.large-fonts { --font-scale: 1.2; }
 
-        /* ----- CONTROLES TOPO (RESPONSIVOS) ----- */
+        /* ----- CONTROLES TOPO ----- */
         .top-controls-container {
             position: fixed;
             top: 15px;
@@ -77,6 +78,30 @@
             background: linear-gradient(45deg, var(--neon-purple), var(--neon-blue));
         }
 
+        /* INDICADOR DE VOZ */
+        .voice-input-indicator {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 8px 20px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid var(--neon-purple);
+            color: #d1c4e9;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+            transition: var(--transition);
+        }
+
+        .voice-input-indicator.listening {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
         /* GAVETA DE TUTORIAIS */
         .tutorial-drawer {
             position: fixed;
@@ -99,12 +124,7 @@
 
         .video-item { margin-bottom: 25px; }
         .video-item h4 { font-family: 'Orbitron'; font-size: 0.8rem; color: var(--neon-blue); margin-bottom: 10px; }
-        .video-frame { 
-            width: 100%; 
-            aspect-ratio: 16/9; 
-            border-radius: 12px; 
-            border: 1px solid var(--neon-purple); 
-        }
+        .video-frame { width: 100%; aspect-ratio: 16/9; border-radius: 12px; border: 1px solid var(--neon-purple); }
 
         /* HUB CENTRAL */
         .hub-container {
@@ -114,17 +134,11 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
-            padding: calc(40px * var(--font-scale)) 20px;
+            padding: calc(60px * var(--font-scale)) 20px;
             text-align: center;
-            margin-top: 60px;
-        }
-
-        /* LOGO PNG RESTAURADA */
-        .main-logo {
-            max-width: 200px;
-            height: auto;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 0 10px var(--neon-blue));
+            margin-top: 10vh; /* Centraliza visualmente no topo */
+            margin-bottom: 100px;
+            z-index: 10;
         }
 
         .logo-text {
@@ -163,11 +177,77 @@
         .card-title { font-family: 'Orbitron'; font-size: 1rem; color: var(--neon-blue); margin-bottom: 10px; }
         .card-desc { font-size: 0.85rem; opacity: 0.7; line-height: 1.5; }
 
+        /* ----- SEÇÃO DIRIGENTES (FOTO ÚNICA E GRANDE) ----- */
+        .equipe-section {
+            width: 100%;
+            max-width: 1100px;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .equipe-titulo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--neon-pink);
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .membro-foto-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 30px;
+            border-radius: 30px;
+            transition: var(--transition);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .membro-foto-container:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+        }
+
+        .foto-dirigentes-grande {
+            width: 100%;
+            height: auto;
+            border-radius: 18px;
+            margin-bottom: 25px;
+            border: 2px solid var(--neon-purple);
+        }
+
+        .nomes-dirigentes {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .nome-individual {
+            text-align: center;
+        }
+
+        .membro-nome {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .membro-cargo {
+            font-size: 0.7rem;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: block;
+        }
+
         @media (max-width: 600px) {
-            .top-controls-container { justify-content: center; top: 10px; }
-            .hub-container { margin-top: 100px; }
+            .hub-container { margin-top: 80px; }
             .logo-text { font-size: 1.6rem; }
-            .tutorial-drawer { max-width: 100%; }
+            .nomes-dirigentes { gap: 20px; flex-direction: column; }
         }
     </style>
 </head>
@@ -188,21 +268,20 @@
             <h3 style="font-family: 'Orbitron'; color: var(--neon-blue);">ACADEMY</h3>
             <button onclick="toggleDrawer(false)" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">✕</button>
         </div>
-        
         <div style="overflow-y: auto; flex: 1; padding-right: 10px;">
             <div class="video-item">
                 <h4>1. Como usar o site</h4>
-                <iframe class="video-frame" src="https://www.youtube.com/embed/0JjbxWBYejw" frameborder="0" allowfullscreen></iframe>
+                <iframe class="video-frame" src="https://www.youtube.com/embed/NXkL5Mg6Tnw" frameborder="0" allowfullscreen></iframe>
             </div>
             <p style="text-align: center; font-size: 0.8rem; color: #a855f7;">Role para ver mais conteúdos</p>
         </div>
     </div>
 
     <div class="hub-container">
-        <img src="image-removebg-preview.png" alt="Hacka Nave Logo" class="main-logo" style="max-width: 140px;">
-        
+        <img src="image-removebg-preview.png" alt="Hacka Nave Logo" class="main-logo" style="max-width: 140px; margin-bottom: 15px; filter: drop-shadow(0 0 10px var(--neon-blue));">
         <h1 class="logo-text">Hacka Nave</h1>
-        <p style="font-family: 'Orbitron'; color: var(--neon-purple); font-size: 0.7rem; letter-spacing: 3px;">DEFESA DIGITAL // 2026</p>
+        <p style="font-family: 'Orbitron'; color: var(--neon-purple); font-size: 0.7rem; letter-spacing: 3px; margin-bottom: 20px;">DEFESA DIGITAL // 2026</p>
+        <div id="voiceIndicator" class="voice-input-indicator">👇 Clique em qualquer lugar para liberar o microfone.</div>
 
         <div class="hub-grid">
             <a href="Hackanav.html" class="nav-card">
@@ -210,13 +289,11 @@
                 <h2 class="card-title">Scanner</h2>
                 <p class="card-desc">Análise profunda de imagens e metadados.</p>
             </a>
-
             <a href="audio.html" class="nav-card">
                 <span class="card-icon">🔊</span>
                 <h2 class="card-title">Áudio</h2>
                 <p class="card-desc">Verificação de integridade sonora e vozes.</p>
             </a>
-
             <a href="quiz.html" class="nav-card" style="border-color: var(--neon-pink);">
                 <span class="card-icon">🧠</span>
                 <h2 class="card-title" style="color: var(--neon-pink);">Quiz</h2>
@@ -225,23 +302,110 @@
         </div>
     </div>
 
+    <section class="equipe-section">
+        <h2 class="equipe-titulo">Equipe Dirigente</h2>
+        <div class="membro-foto-container">
+            <img src="dirigentes.jpeg" alt="Equipe Hacka Nave" class="foto-dirigentes-grande">
+            <div class="nomes-dirigentes">
+                <div class="nome-individual">
+                    <span class="membro-nome">Anne Mello</span>
+                    <span class="membro-cargo">Programadora</span>
+                </div>
+                <div class="nome-individual">
+                    <span class="membro-nome">Julia Ferreira</span>
+                    <span class="membro-cargo">Oradora</span>
+                </div>
+                <div class="nome-individual">
+                    <span class="membro-nome">Isadora Putini</span>
+                    <span class="membro-cargo">Lider</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <script>
-        function toggleDrawer(open) {
-            document.getElementById('tutorialDrawer').classList.toggle('open', open);
+        let modoAtivo = null;
+        let synth = window.speechSynthesis;
+        let recognition = null;
+        let micIniciado = false;
+        const voiceIndicator = document.getElementById('voiceIndicator');
+
+        function falarNarracao(texto) {
+            if(!synth || (modoAtivo !== 'idoso' && modoAtivo !== 'cego')) return;
+            let utterance = new SpeechSynthesisUtterance(texto);
+            utterance.lang = 'pt-BR';
+            synth.speak(utterance);
         }
 
-        let modoAtivo = null;
         function toggleModo(modo) {
+            if(synth) synth.cancel();
             document.body.classList.remove('large-fonts');
+            document.getElementById('btnIdoso').classList.remove('active');
+            document.getElementById('btnCego').classList.remove('active');
+
             if (modoAtivo === modo) {
                 modoAtivo = null;
-                document.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
                 return;
             }
+
             modoAtivo = modo;
-            if (modo === 'idoso') document.body.classList.add('large-fonts');
-            document.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('btn' + modo.charAt(0).toUpperCase() + modo.slice(1)).classList.add('active');
+
+            if (modo === 'idoso') {
+                document.body.classList.add('large-fonts');
+                falarNarracao("Modo idoso ativado.");
+            }
+            if (modo === 'cego') {
+                falarNarracao("Modo para deficientes visuais ativado.");
+            }
+        }
+
+        function inicializarMicrofone() {
+            if (micIniciado) return;
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechObj = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechObj();
+                recognition.lang = 'pt-BR';
+                recognition.continuous = true; 
+                recognition.interimResults = false;
+
+                recognition.onstart = function() {
+                    micIniciado = true;
+                    if(!modoAtivo){
+                        voiceIndicator.innerText = "🎤 Ouvindo... Diga 'Acessibilidade'";
+                        voiceIndicator.className = "voice-input-indicator listening";
+                    }
+                };
+
+                recognition.onresult = function(event) {
+                    const indexAtual = event.resultIndex;
+                    const falaUsuario = event.results[indexAtual][0].transcript.toLowerCase().trim();
+                    
+                    if (falaUsuario.includes("scanner") || falaUsuario.includes("imagem")) {
+                        falarNarracao("Abrindo scanner.");
+                        setTimeout(() => { window.location.href = "Hackanav.html"; }, 1200);
+                    }
+                    if (falaUsuario.includes("áudio") || falaUsuario.includes("audio")) {
+                        falarNarracao("Abrindo áudio.");
+                        setTimeout(() => { window.location.href = "audio.html"; }, 1200);
+                    }
+                    if (falaUsuario.includes("quiz")) {
+                        falarNarracao("Abrindo quiz.");
+                        setTimeout(() => { window.location.href = "quiz.html"; }, 1200);
+                    }
+                    if (falaUsuario.includes("acessibilidade")) {
+                        toggleModo('cego');
+                    }
+                };
+
+                try { recognition.start(); } catch(e) {}
+            }
+        }
+
+        window.addEventListener('click', inicializarMicrofone);
+
+        function toggleDrawer(open) {
+            document.getElementById('tutorialDrawer').classList.toggle('open', open);
         }
     </script>
 </body>
