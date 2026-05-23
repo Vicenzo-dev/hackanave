@@ -3,284 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hacka Nav - Quiz Academy</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Quiz Academy - Hacka Nave</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #090312;
+            --bg: #090312;
             --neon-purple: #a855f7;
-            --neon-pink: #ff007f;
             --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
             --correct: #22c55e;
             --wrong: #ef4444;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: radial-gradient(circle at center, #1a0b2e, #090312);
+            background: var(--bg);
             color: white;
+            padding: 15px;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            padding: 20px;
         }
 
-        .header { text-align: center; margin-bottom: 30px; }
-        .logo-text { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--neon-blue); text-transform: uppercase; letter-spacing: 2px; }
-
-        .quiz-container {
+        .quiz-card {
             width: 100%;
-            max-width: 650px;
+            max-width: 600px;
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border-radius: 24px;
-            padding: 30px;
             border: 1px solid rgba(168, 85, 247, 0.3);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
         }
 
-        .progress-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--neon-purple); }
+        .header-info { display: flex; justify-content: space-between; font-family: 'Orbitron'; font-size: 0.7rem; color: var(--neon-blue); margin-bottom: 10px; }
 
-        .progress-container {
+        .progress-bar {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: rgba(255,255,255,0.1);
             border-radius: 10px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             overflow: hidden;
         }
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
-            transition: width 0.4s ease;
-        }
+        #progressFill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue)); transition: 0.4s; }
 
-        .video-wrapper {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            margin-bottom: 25px;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 2px solid rgba(168, 85, 247, 0.4);
-        }
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            border: none;
-        }
-
-        .question-text { font-size: 1.15rem; font-weight: 600; margin-bottom: 20px; line-height: 1.5; color: #eee; }
-
-        .options-grid { display: flex; flex-direction: column; gap: 12px; }
-
-        .option-btn {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 16px 20px;
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
             border-radius: 12px;
-            color: #ddd;
-            cursor: pointer;
-            text-align: left;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid var(--neon-purple);
         }
 
-        .option-btn:hover:not(.correct):not(.wrong) { background: rgba(255, 255, 255, 0.12); border-color: var(--neon-blue); transform: translateX(5px); }
+        .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; min-height: 60px; }
 
-        .option-btn.correct { background: var(--correct) !important; border-color: #4ade80; color: white; font-weight: 600; }
+        .options { display: flex; flex-direction: column; gap: 10px; }
 
-        .option-btn.wrong { background: var(--wrong) !important; border-color: #f87171; color: white; opacity: 0.8; }
+        .opt-btn {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .opt-btn.correct { background: var(--correct) !important; border-color: #fff; }
+        .opt-btn.wrong { background: var(--wrong) !important; }
 
         .next-btn {
-            margin-top: 30px;
             width: 100%;
-            padding: 18px;
-            border-radius: 12px;
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
             border: none;
-            background: linear-gradient(45deg, var(--neon-purple), var(--neon-blue));
+            background: var(--neon-purple);
             color: white;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
+            font-family: 'Orbitron';
+            font-weight: bold;
             cursor: pointer;
             display: none;
-            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
         }
 
-        .result-screen { text-align: center; display: none; padding: 40px 0; }
-        .back-home { display: inline-block; margin-top: 30px; color: var(--neon-blue); text-decoration: none; font-weight: bold; border: 1px solid var(--neon-blue); padding: 10px 20px; border-radius: 50px; transition: 0.3s; }
-        .back-home:hover { background: var(--neon-blue); color: black; }
+        /* TELA FINAL */
+        #resultScreen { text-align: center; display: none; }
+        .score-circle {
+            width: 120px; height: 120px;
+            border: 5px solid var(--neon-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 2rem;
+            font-family: 'Orbitron';
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1 class="logo-text">Hacka Nave Academy</h1>
-    </div>
-
-    <div class="quiz-container">
-        <div class="progress-info">
-            <span id="moduleTitle">Módulo 1</span>
-            <span id="questionCounter">Pergunta 1/10</span>
-        </div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-
+    <div class="quiz-card">
         <div id="quiz-content">
-            <div class="video-wrapper" id="videoArea">
-                <iframe id="currentVideo" src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+            <div class="header-info">
+                <span id="modLabel">Módulo 1</span>
+                <span id="quesLabel">Questão 1/10</span>
+            </div>
+            <div class="progress-bar"><div id="progressFill"></div></div>
+
+            <div class="video-container" id="videoWrapper">
+                <iframe id="videoPlayer" width="100%" height="100%" src="" frameborder="0" allowfullscreen></iframe>
             </div>
 
-            <div class="question-text" id="questionText">Carregando pergunta...</div>
-            
-            <div class="options-grid" id="optionsGrid"></div>
-
-            <button class="next-btn" id="nextBtn" onclick="nextStep()">PRÓXIMA PERGUNTA</button>
+            <div class="question" id="qText">Carregando...</div>
+            <div class="options" id="optionsBox"></div>
+            <button class="next-btn" id="nextBtn" onclick="nextAction()">PRÓXIMA</button>
         </div>
 
-        <div id="resultScreen" class="result-screen">
-            <h2 style="font-size: 2rem; color: var(--neon-blue); font-family: 'Orbitron';">TREINAMENTO CONCLUÍDO! 🛸</h2>
-            <p style="margin: 20px 0; font-size: 1.1rem;">Parabéns! Você completou os 3 módulos de defesa digital.</p>
-            <div id="scoreText" style="font-size: 1.3rem; margin-bottom: 10px;"></div>
-            <a href="inicio.html" class="back-home">Voltar ao Painel Central</a>
+        <div id="resultScreen">
+            <h2 style="font-family: 'Orbitron'; color: var(--neon-blue);">MISSÃO CONCLUÍDA!</h2>
+            <div class="score-circle" id="finalScore">0</div>
+            <p id="scoreMsg">Ótimo trabalho!</p>
+            <p style="margin-top: 10px; color: #a295c0;">Você concluiu todos os módulos de treinamento contra desinformação.</p>
+            <button class="next-btn" style="display: block;" onclick="location.href='inicio.html'">VOLTAR AO INÍCIO</button>
         </div>
     </div>
 
     <script>
-        const quizData = {
+        const modules = {
             1: {
-                video: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Link Vídeo Módulo 1
+                video: "https://www.youtube.com/embed/dQw4w9WgXcQ", 
                 questions: [
-                    { q: "Qual é o tema principal do video?", options: ["O uso correto do WhatsApp", "O conceito e os perigos da desinformação digital", "O crescimento do TikTok no Brasil", "A história da inteligência artificial"], correct: 1 },
-                    { q: "Segundo o video, qual é o principal objetivo da desinformação digital?", options: ["Divertir os internautas", "Enganar, manipular opiniões ou causar confusão", "Ensinar tecnologias para idosos", "Promover canais confiáveis"], correct: 1 },
-                    { q: "Em quais formatos a desinformação digital pode aparecer?", options: ["Apenas textos curtos", "Vídeos de longa duração", "Textos, vídeos, imagens, áudios e IA", "Somente áudios no WhatsApp"], correct: 2 },
-                    { q: "O que faz uma informação falsa viralizar mais rápido?", options: ["Palavras difíceis", "Conteúdo antigo", "O nível de polêmica", "Dados científicos comprovados"], correct: 2 },
-                    { q: "Quais redes e formatos são citados como meios de espalhamento?", options: ["WhatsApp, TikTok, vídeos fora de contexto e manchetes", "E-mails, blogs de culinária e SMS", "Apps de bancos e podcasts", "Linkedin e anúncios de jornal"], correct: 0 },
-                    { q: "O que são 'deepfakes', de acordo com o roteiro?", options: ["Notícias anônimas", "Vídeos manipulados com IA realistas", "Fotos de arquivos públicos", "Mensagens de voz de robôs"], correct: 1 },
-                    { q: "Quais são os exemplos comuns de desinformação listados?", options: ["Fofocas e dicas de moda", "Clima e futebol", "Vagas falsas e sorteios", "Notícias de política, saúde e vídeos manipulados"], correct: 3 },
-                    { q: "Por que a desinformação digital é considerada perigosa?", options: ["Consome armazenamento", "Causa medo, manipula eleições e põe vidas em risco", "Reduz a velocidade da internet", "Afasta as pessoas da família"], correct: 1 },
-                    { q: "Que atitude o roteiro recomenda antes de compartilhar?", options: ["Enviar para todos imediatamente", "Conferir a fonte e pesquisar", "Apagar o app de mensagens", "Curtir para ajudar no engajamento"], correct: 1 },
-                    { q: "De quem é a responsabilidade de combater a desinformação?", options: ["Apenas donos das redes", "Governos e polícia", "De cada um de nós", "Somente jornalistas"], correct: 2 }
+                    { q: "Qual é o tema principal do video?", opts: ["Uso do WhatsApp", "Conceito e perigos da desinformação", "Crescimento do TikTok", "História da IA"], ans: 1 },
+                    { q: "Qual é o principal objetivo da desinformação digital?", opts: ["Divertir pessoas", "Enganar ou causar confusão", "Ensinar tecnologia", "Promover notícias"], ans: 1 },
+                    { q: "Em quais formatos a desinformação pode aparecer?", opts: ["Apenas texto", "Apenas vídeo", "Textos, vídeos, imagens e IA", "Apenas áudio"], ans: 2 },
+                    { q: "O que faz uma informação falsa viralizar mais rápido?", opts: ["Palavras difíceis", "Conteúdo antigo", "Nível de polêmica", "Dados científicos"], ans: 2 },
+                    { q: "Quais redes são citadas como meios de espalhamento?", opts: ["WhatsApp, TikTok e vídeos cortados", "E-mails e Blogs", "Apps de bancos", "Linkedin e Jornais"], ans: 0 },
+                    { q: "O que são 'deepfakes'?", opts: ["Notícias anônimas", "Vídeos manipulados com IA realistas", "Fotos antigas", "Mensagens de voz"], ans: 1 },
+                    { q: "Exemplos comuns de desinformação listados:", opts: ["Fofocas", "Previsão do tempo", "Sorteios", "Política, saúde e vídeos manipulados"], ans: 3 },
+                    { q: "Por que a desinformação é perigosa?", opts: ["Gasta bateria", "Causa medo e põe vidas em risco", "Reduz a velocidade da internet", "Afasta a família"], ans: 1 },
+                    { q: "Atitude recomendada antes de compartilhar:", opts: ["Enviar para todos", "Conferir a fonte e pesquisar", "Apagar o app", "Curtir para engajar"], ans: 1 },
+                    { q: "De quem é a responsabilidade de combater a desinformação?", opts: ["Donos das redes", "Polícia", "De cada um de nós", "Jornalistas"], ans: 2 }
                 ]
             },
             2: {
-                video: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Link Vídeo Módulo 2
+                video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
                 questions: [
-                    { q: "Qual o principal objetivo por trás da criação da desinformação digital?", options: ["Entreter as pessoas", "Gerar lucro, influência ou confusão", "Testar a internet", "Ensinar tecnologia"], correct: 1 },
-                    { q: "Qual o primeiro passo para o funcionamento da desinformação?", options: ["Compartilhamento em massa", "Verificação por agência", "Criação de uma informação falsa", "Exclusão da conta"], correct: 2 },
-                    { q: "Que recurso é usado para atrair cliques antes de ler?", options: ["Link de vírus", "Título chamativo e apelativo", "Lista bibliográfica", "Design preto e branco"], correct: 1 },
-                    { q: "Por que milhares de pessoas acreditam em mentiras?", options: ["Compartilham sem verificar", "Governo obriga a ler", "Internet só aceita verdades", "Redes deletam mentiras"], correct: 0 },
-                    { q: "Qual alternativa apresenta uma técnica visual de desinformação?", options: ["Textos longos", "Imagens editadas e vídeos cortados", "Gráficos oficiais", "Fotos de satélites"], correct: 1 },
-                    { q: "Que outro tipo de mídia manipulada é usada para enganar?", options: ["Livros didáticos", "Áudios falsos", "E-mails criptografados", "Mensagens automáticas"], correct: 1 },
-                    { q: "O que significa 'conteúdo fora de contexto'?", options: ["Usar informação real para distorcer sentido", "Texto sem erro", "Tradução perfeita", "Somente para computadores"], correct: 0 },
-                    { q: "Por que as pessoas acreditam fácil em fake news?", options: ["Prêmios em dinheiro", "Confirma o que elas já pensam", "Não sabem ler", "Perfis de cientistas"], correct: 1 },
-                    { q: "Qual atitude recomendada para evitar desinformação?", options: ["Enviar para amigos perguntando", "Ler apenas o título", "Verificar fonte em sites confiáveis", "Apagar redes sociais"], correct: 2 },
-                    { q: "Qual mensagem final o roteiro deixa?", options: ["Internet é sempre segura", "Informação também exige responsabilidade", "Compartilhar tudo por impulso", "Títulos são confiáveis"], correct: 1 }
+                    { q: "Qual o principal objetivo da criação da desinformação?", opts: ["Entreter", "Gerar lucro ou confusão planejada", "Testar internet", "Ensinar idosos"], ans: 1 },
+                    { q: "Qual o primeiro passo da desinformação nas redes?", opts: ["Compartilhamento", "Verificação", "Criação de informação falsa", "Exclusão da conta"], ans: 2 },
+                    { q: "Recurso muito usado para atrair cliques:", opts: ["Vírus", "Título chamativo e apelativo", "Bibliografia", "Design P&B"], ans: 1 },
+                    { q: "Por que milhares acreditam em mentiras?", opts: ["Compartilham sem verificar", "Governo obriga", "Internet só aceita verdades", "Redes deletam na hora"], ans: 0 },
+                    { q: "Técnica visual de desinformação citada:", opts: ["Textos longos", "Imagens editadas e vídeos cortados", "Gráficos oficiais", "Fotos de satélite"], ans: 1 },
+                    { q: "Outro tipo de mídia manipulada usada:", opts: ["Livros", "Áudios falsos", "E-mails", "Mensagens de operadora"], ans: 1 },
+                    { q: "O que significa 'conteúdo fora de contexto'?", opts: ["Distorcer o sentido original", "Texto sem erro", "Tradução perfeita", "Uso em PCs"], ans: 0 },
+                    { q: "Por que acreditam fácil em fake news?", opts: ["Prêmios", "Confirma o que elas já pensam", "Não sabem ler", "Cientistas famosos"], ans: 1 },
+                    { q: "Atitude para evitar desinformação:", opts: ["Perguntar a amigos", "Ler só título", "Pesquisar em sites confiáveis", "Apagar redes"], ans: 2 },
+                    { q: "Mensagem final sobre o uso da internet:", opts: ["É sempre segura", "Informação exige responsabilidade", "Compartilhar por impulso", "Títulos são confiáveis"], ans: 1 }
                 ]
             },
             3: {
-                video: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Link Vídeo Módulo 3
+                video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
                 questions: [
-                    { q: "Quanto tempo uma mentira leva para alcançar milhões?", options: ["Dias", "Horas", "Minutos", "Segundos"], correct: 2 },
-                    { q: "Desinformação é o maior problema de qual período?", options: ["Era industrial", "Era digital", "Século passado", "História moderna"], correct: 1 },
-                    { q: "O que NÃO é citado como impacto social?", options: ["Medo e confusão", "Desemprego tecnológico", "Divisão entre pessoas", "Manipulação de opiniões"], correct: 1 },
-                    { q: "Que outro grande impacto a desinformação causa?", options: ["Influenciar eleições", "Mudar o clima", "Reduzir uso de internet", "Substituir TV"], correct: 0 },
-                    { q: "Por que redes sociais espalham conteúdos rápido?", options: ["São ferramentas grátis", "Priorizam conteúdos que geram emoção", "Bloqueiam notícias reais", "Funcionam de madrugada"], correct: 1 },
-                    { q: "O que são 'deepfakes'?", options: ["Senhas de hackers", "Vídeos falsos realistas criados com IA", "Vírus de celular", "Filtros de olhos"], correct: 1 },
-                    { q: "Qual ferramenta envolve verificação manual?", options: ["Educação digital", "Pensamento crítico", "Consciência", "Checagem de fatos"], correct: 3 },
-                    { q: "O que devemos ter ao enviar um conteúdo?", options: ["Pressa", "Consciência ao compartilhar", "Desconfiança total", "Certeza de viralizar"], correct: 1 },
-                    { q: "O que a informação pode fazer além de mentiras?", options: ["Lucros financeiros", "Construir conhecimento", "Substituir livros", "Entreter jovens"], correct: 1 },
-                    { q: "Onde começa a escolha de construir conhecimento?", options: ["Em cada clique", "Nas escolas", "Termos de uso", "No governo"], correct: 0 }
+                    { q: "Quanto tempo uma mentira leva para alcançar milhões?", opts: ["Dias", "Horas", "Minutos", "Segundos"], ans: 2 },
+                    { q: "A desinformação é um problema de qual período?", opts: ["Era industrial", "Era digital", "Século passado", "História moderna"], ans: 1 },
+                    { q: "O que NÃO é impacto da desinformação?", opts: ["Medo", "Aumento do desemprego tecnológico", "Divisão", "Manipulação"], ans: 1 },
+                    { q: "Outro grande impacto social citado:", opts: ["Influenciar eleições", "Mudar clima", "Reduzir internet", "Substituir TV"], ans: 0 },
+                    { q: "Por que redes espalham conteúdo rápido?", opts: ["Grátis", "Priorizam emoção", "Bloqueiam notícias", "Funcionam à noite"], ans: 1 },
+                    { q: "O que são Deepfakes?", opts: ["Senhas", "Vídeos falsos realistas com IA", "Vírus", "Filtros"], ans: 1 },
+                    { q: "Verificação manual da veracidade é:", opts: ["Educação", "Pensamento", "Consciência", "Checagem de fatos"], ans: 3 },
+                    { q: "O que ter no momento de enviar um conteúdo?", opts: ["Pressa", "Consciência", "Desconfiança", "Certeza"], ans: 1 },
+                    { q: "A informação pode fazer o que além de mentiras?", opts: ["Lucro", "Construir conhecimento", "Substituir livros", "Entreter"], ans: 1 },
+                    { q: "Onde começa a escolha de construir conhecimento?", opts: ["Em cada clique", "Escolas", "Termos de uso", "Governo"], ans: 0 }
                 ]
             }
         };
 
-        let currentModule = 1;
-        let currentQuestionIdx = 0;
-        let totalScore = 0;
-        let isAnswered = false;
+        let currentMod = 1;
+        let currentQ = 0;
+        let score = 0;
+        let answered = false;
 
-        function loadStep() {
-            isAnswered = false;
-            const module = quizData[currentModule];
-            const q = module.questions[currentQuestionIdx];
+        function loadQuestion() {
+            answered = false;
+            const data = modules[currentMod];
+            const q = data.questions[currentQ];
 
-            // UI
-            document.getElementById('moduleTitle').innerText = `Módulo ${currentModule}`;
-            document.getElementById('questionCounter').innerText = `Pergunta ${currentQuestionIdx + 1}/10`;
-            document.getElementById('questionText').innerText = q.q;
-            document.getElementById('currentVideo').src = module.video;
+            document.getElementById('modLabel').innerText = `MÓDULO ${currentMod}`;
+            document.getElementById('quesLabel').innerText = `QUESTÃO ${currentQ + 1}/10`;
+            document.getElementById('videoPlayer').src = data.video;
+            document.getElementById('qText').innerText = q.q;
             document.getElementById('nextBtn').style.display = 'none';
 
-            // Opções
-            const grid = document.getElementById('optionsGrid');
-            grid.innerHTML = '';
-            q.options.forEach((opt, index) => {
+            const optionsBox = document.getElementById('optionsBox');
+            optionsBox.innerHTML = '';
+            q.opts.forEach((opt, i) => {
                 const btn = document.createElement('button');
-                btn.className = 'option-btn';
+                btn.className = 'opt-btn';
                 btn.innerText = opt;
-                btn.onclick = () => checkAnswer(index, btn);
-                grid.appendChild(btn);
+                btn.onclick = () => check(i, btn);
+                optionsBox.appendChild(btn);
             });
 
-            // Barra (3 módulos de 10 = 30 total)
             const totalQ = 30;
-            const currentTotal = ((currentModule - 1) * 10) + (currentQuestionIdx + 1);
-            document.getElementById('progressBar').style.width = (currentTotal / totalQ * 100) + '%';
+            const progress = (( (currentMod-1) * 10 + currentQ) / totalQ) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
         }
 
-        function checkAnswer(idx, btn) {
-            if (isAnswered) return;
-            isAnswered = true;
-            const correct = quizData[currentModule].questions[currentQuestionIdx].correct;
-            const btns = document.querySelectorAll('.option-btn');
-
-            if (idx === correct) {
+        function check(idx, btn) {
+            if(answered) return;
+            answered = true;
+            const correct = modules[currentMod].questions[currentQ].ans;
+            
+            if(idx === correct) {
                 btn.classList.add('correct');
-                totalScore++;
+                score++;
             } else {
                 btn.classList.add('wrong');
-                btns[correct].classList.add('correct');
+                document.querySelectorAll('.opt-btn')[correct].classList.add('correct');
             }
-
-            const nextBtn = document.getElementById('nextBtn');
-            if (currentQuestionIdx === 9 && currentModule < 3) {
-                nextBtn.innerText = "PRÓXIMO MÓDULO ➡️";
-            } else if (currentQuestionIdx === 9 && currentModule === 3) {
-                nextBtn.innerText = "VER RESULTADO FINAL 🏁";
-            } else {
-                nextBtn.innerText = "PRÓXIMA PERGUNTA";
-            }
-            nextBtn.style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
         }
 
-        function nextStep() {
-            if (currentQuestionIdx < 9) {
-                currentQuestionIdx++;
-                loadStep();
-            } else if (currentModule < 3) {
-                currentModule++;
-                currentQuestionIdx = 0;
-                alert(`Módulo ${currentModule-1} completo! Iniciando Módulo ${currentModule}. Assista ao novo vídeo.`);
-                loadStep();
+        function nextAction() {
+            if(currentQ < 9) {
+                currentQ++;
+                loadQuestion();
+            } else if (currentMod < 3) {
+                currentMod++;
+                currentQ = 0;
+                alert("Módulo concluído! Vamos para o próximo.");
+                loadQuestion();
             } else {
-                showFinalResults();
+                finish();
             }
         }
 
-        function showFinalResults() {
+        function finish() {
             document.getElementById('quiz-content').style.display = 'none';
-            document.getElementById('moduleTitle').parentElement.style.display = 'none';
-            document.getElementById('progressBar').parentElement.style.display = 'none';
             document.getElementById('resultScreen').style.display = 'block';
-            document.getElementById('scoreText').innerHTML = `Pontuação Final: <strong>${totalScore}</strong> de 30 acertos.`;
+            document.getElementById('finalScore').innerText = score;
+            const msg = score > 25 ? "Excepcional! Você é um mestre da verdade." : score > 15 ? "Bom trabalho! Continue se informando." : "Precisa praticar mais! Estude os módulos novamente.";
+            document.getElementById('scoreMsg').innerText = msg;
         }
 
-        loadStep();
+        loadQuestion();
     </script>
 </body>
 </html>
