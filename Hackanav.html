@@ -493,6 +493,7 @@
 
 // ----- PROCESSAMENTO FORENSE BLINDADO (IMAGEM - QWEN) -----
 // ----- PROCESSAMENTO FORENSE BLINDADO (IMAGEM - QWEN CORRIGIDO) -----
+// ----- PROCESSAMENTO FORENSE BLINDADO (IMAGEM - QWEN) -----
 async function analisarImagem() {
     if (!imagemBase64Completa) return;
 
@@ -504,22 +505,21 @@ async function analisarImagem() {
     resultBox.style.display = 'none';
     analyzeBtn.disabled = true;
 
-    falarNarracao("Iniciando varredura pericial da imagem.");
+    falarNarracao("Iniciando varredura pericial da imagem. Aguarde.");
 
-    // Prompt extremamente agressivo para forçar o formato e cortar o "pensamento"
+    // Voltamos ao prompt original que funcionou muito bem para gerar o laudo
     const promptContexto = `
-        ATENÇÃO: AJA COMO UM EXTRATOR DE DADOS AUTOMATIZADO.
-        VOCÊ SÓ PODE GERAR TEXTO EM PORTUGUÊS DO BRASIL (PT-BR). INGLÊS É TOTALMENTE PROIBIDO.
-        NÃO EXPLIQUE SEU RACIOCÍNIO. NÃO ESCREVA "Wait", "Let's think" ou "Here is".
+        IMPORTANTE: Você DEVE responder inteiramente em Português do Brasil (pt-BR). Não escreva NADA em inglês.
+        Atue estritamente como um Perito Forense e Checador de Fatos profissional analisando esta imagem.
         
-        Retorne APENAS o bloco abaixo preenchido em PT-BR, começando com [LAUDO] e terminando com [/LAUDO]:
+        REGRA DE OURO: Não mostre seu processo de raciocínio. 
+        Você DEVE escrever o seu relatório final OBRIGATORIAMENTE dentro das tags [LAUDO] e [/LAUDO].
 
-        [LAUDO]
-        1. **Veredito Inicial**: ([VEREDITO]: VERDADEIRA, [VEREDITO]: FAKE NEWS, [VEREDITO]: FORA DE CONTEXTO ou [VEREDITO]: ENGANOSA)
-        2. **Análise de Elementos**: (Análise curta em português)
-        3. **Argumentação**: (Argumento curto em português)
-        4. **Fonte**: (Sua fonte em português)
-        [/LAUDO]
+        Formato exigido estritamente dentro das tags:
+        1. **Veredito Inicial**: ([VEREDITO]: VERDADEIRA, [VEREDITO]: FAKE NEWS, [VEREDITO]: FORA DE CONTEXTO ou [VEREDITO]: ENGANOSA).
+        2. **Análise de Elementos**: (Aponte sinais de manipulação, contradições ou erros textuais em português).
+        3. **Argumentação**: (Explique o contexto real conhecido desse fato ou imagem em português).
+        4. **Fonte**: (Onde encontrou a informação, se possível, em português).
     `;
 
     try {
@@ -530,7 +530,7 @@ async function analisarImagem() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "qwen/qwen3.6-27b",
+                model: "qwen/qwen3.6-27b", // Mantendo o modelo que lê imagens
                 messages: [
                     {
                         role: "user",
@@ -538,7 +538,9 @@ async function analisarImagem() {
                             { type: "text", text: promptContexto },
                             {
                                 type: "image_url",
-                                image_url: { url: imagemBase64Completa }
+                                image_url: {
+                                    url: imagemBase64Completa
+                                }
                             }
                         ]
                     }
@@ -555,26 +557,26 @@ async function analisarImagem() {
         const dadosFinais = await response.json();
         let textoResposta = dadosFinais.choices[0].message.content;
 
-        // --- INÍCIO DO FILTRO À PROVA DE BALAS (AGRESSIVO) ---
+        // --- INÍCIO DA GUILHOTINA (FILTRO ATUALIZADO) ---
         
-        // 1. Remove pensamentos internos comuns que o Qwen vaza em inglês
-        textoResposta = textoResposta.replace(/Wait,[\s\S]*/i, '');
-        textoResposta = textoResposta.replace(/Let's[\s\S]*/i, '');
+        // 1. Remove qualquer pensamento da IA que vaze em tags <think>
         textoResposta = textoResposta.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
-        // 2. Tenta extrair apenas o laudo
+        // 2. Tenta capturar as tags [LAUDO]
         const regexLaudo = /\[LAUDO\]([\s\S]*?)\[\/LAUDO\]/i;
         const extraido = textoResposta.match(regexLaudo);
 
         if (extraido && extraido[1]) {
             textoResposta = extraido[1].trim();
         } else {
-            // NOVO PLANO B MATADOR: Pega do "1." até o final da linha do "4." e descarta o resto do lixo em inglês
+            // PLANO B (O que vai salvar o seu laudo): 
+            // Pega exatamente do "1." até o fim da linha do "4." e descarta o resto do inglês
             const matchNumeros = textoResposta.match(/1\.[\s\S]*?4\.[^\n]*/i);
+            
             if (matchNumeros) {
-                textoResposta = matchNumeros[0].trim();
+                textoResposta = matchNumeros[0].trim(); // Captura só a parte boa
             } else {
-                // Fallback de segurança extrema
+                // Se der tudo errado, tenta achar o 1.
                 const inicioItem1 = textoResposta.indexOf("1.");
                 if (inicioItem1 !== -1) {
                     textoResposta = textoResposta.substring(inicioItem1);
@@ -582,40 +584,42 @@ async function analisarImagem() {
             }
         }
 
-        // 3. Limpeza final
+        // 3. Limpa sobras de pensamentos em inglês caso eles tenham vazado pro meio do laudo
+        textoResposta = textoResposta.replace(/\n\nWait,[\s\S]*/i, '');
+        textoResposta = textoResposta.replace(/\n\nLet's[\s\S]*/i, '');
         textoResposta = textoResposta.replace(/^["']|["']$/g, '').trim();
         
         // --- FIM DO FILTRO ---
 
         resultBox.innerHTML = formatarTexto(textoResposta);
         resultBox.style.display = 'block';
- 
+        
         const linhasDoTexto = textoResposta.split('\n');
         const primeiraLinha = (linhasDoTexto[0] || "").toUpperCase();
-        
-        if(primeiraLinha.includes("FAKE") || primeiraLinha.includes("ENGANOSA") || primeiraLinha.includes("FORA DE CONTEXTO") || primeiraLinha.includes("SUSPEITO")) {
+
+        if(primeiraLinha.includes("FAKE") || primeiraLinha.includes("ENGANOSA") || primeiraLinha.includes("FORA DE CONTEXTO")) {
             resultBox.style.borderLeftColor = "#ff4d6d"; 
             document.body.classList.add('is-fake');
             mostrarPopup("CONTEÚDO FAKE DETECTADO", "fake");
-            falarNarracao("Atenção. Conteúdo fake ou enganoso detectado na imagem.");
+            falarNarracao("Atenção. Conteúdo fake ou enganoso detectado.");
         } else {
             resultBox.style.borderLeftColor = "#10b981"; 
             document.body.classList.add('is-true');
             mostrarPopup("CONTEÚDO VERÍDICO", "verdadeiro");
-            falarNarracao("Análise concluída. A imagem é verídica.");
+            falarNarracao("Análise concluída. Conteúdo verídico.");
         }
 
         setTimeout(() => {
-            falarNarracao("Relatório da análise: " + textoResposta);
-        }, 3500);
+            falarNarracao("Relatório completo: " + textoResposta);
+        }, 4000);
 
     } catch (error) {
-        console.error("Erro no processamento:", error);
+        console.error(error);
         if (error.message.includes("Rate limit")) {
-            alert("O radar está sobrecarregado (Limite atingido). Aguarde alguns segundos.");
+            alert("O radar está sobrecarregado (Limite de tokens atingido). Aguarde 10 segundos e tente analisar novamente.");
             falarNarracao("Radar sobrecarregado. Aguarde alguns segundos.");
         } else {
-            alert("Erro ao processar imagem: " + error.message);
+            alert("Erro na análise: " + error.message);
             falarNarracao("Erro operacional na varredura da imagem.");
         }
     } finally {
