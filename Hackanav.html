@@ -492,11 +492,9 @@
     }
 
 // ----- PROCESSAMENTO FORENSE BLINDADO (IMAGEM - QWEN) -----
+// ----- PROCESSAMENTO FORENSE BLINDADO (IMAGEM - QWEN CORRIGIDO) -----
 async function analisarImagem() {
-    if (!imagemBase64Completa) {
-        alert("Nenhuma imagem carregada.");
-        return;
-    }
+    if (!imagemBase64Completa) return;
 
     const loading = document.getElementById('loading');
     const resultBox = document.getElementById('resultBox');
@@ -506,22 +504,22 @@ async function analisarImagem() {
     resultBox.style.display = 'none';
     analyzeBtn.disabled = true;
 
-    falarNarracao("Iniciando varredura pericial da imagem. Aguarde.");
+    falarNarracao("Iniciando varredura pericial da imagem.");
 
-    // Prompt agressivo para forçar o formato e o idioma junto com a imagem
+    // Prompt extremamente agressivo para forçar o formato e cortar o "pensamento"
     const promptContexto = `
-        ATENÇÃO: Você é um Perito Forense Computacional atuando no Brasil.
+        ATENÇÃO: AJA COMO UM EXTRATOR DE DADOS AUTOMATIZADO.
+        VOCÊ SÓ PODE GERAR TEXTO EM PORTUGUÊS DO BRASIL (PT-BR). INGLÊS É TOTALMENTE PROIBIDO.
+        NÃO EXPLIQUE SEU RACIOCÍNIO. NÃO ESCREVA "Wait", "Let's think" ou "Here is".
         
-        REGRAS DE OURO:
-        1. Você DEVE responder APENAS em Português do Brasil (pt-BR). É EXPRESSAMENTE PROIBIDO usar inglês. Traduza mentalmente tudo que ver na imagem antes de escrever.
-        2. Não mostre seu processo de raciocínio.
-        3. Você DEVE escrever o seu relatório final OBRIGATORIAMENTE dentro das tags [LAUDO] e [/LAUDO].
+        Retorne APENAS o bloco abaixo preenchido em PT-BR, começando com [LAUDO] e terminando com [/LAUDO]:
 
-        Formato exigido dentro das tags:
+        [LAUDO]
         1. **Veredito Inicial**: ([VEREDITO]: VERDADEIRA, [VEREDITO]: FAKE NEWS, [VEREDITO]: FORA DE CONTEXTO ou [VEREDITO]: ENGANOSA)
-        2. **Análise de Elementos**: (Aponte sinais de manipulação, contradições ou erros textuais, sempre em português)
-        3. **Argumentação**: (Explique o contexto da imagem em português)
-        4. **Fonte**: (Possível origem da imagem)
+        2. **Análise de Elementos**: (Análise curta em português)
+        3. **Argumentação**: (Argumento curto em português)
+        4. **Fonte**: (Sua fonte em português)
+        [/LAUDO]
     `;
 
     try {
@@ -532,22 +530,15 @@ async function analisarImagem() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "qwen/qwen3.6-27b", // Mantido exatamente como você pediu
+                model: "qwen/qwen3.6-27b",
                 messages: [
-                    {
-                        // Injeção de sistema idêntica à trava de segurança para proibir inglês
-                        role: "system",
-                        content: "Você é um sistema pericial brasileiro. Responda ESTRITAMENTE em Português do Brasil (pt-BR). Nunca gere respostas em Inglês. Sempre encapsule sua resposta final nas tags [LAUDO] e [/LAUDO]."
-                    },
                     {
                         role: "user",
                         content: [
                             { type: "text", text: promptContexto },
                             {
                                 type: "image_url",
-                                image_url: {
-                                    url: imagemBase64Completa
-                                }
+                                image_url: { url: imagemBase64Completa }
                             }
                         ]
                     }
@@ -564,40 +555,45 @@ async function analisarImagem() {
         const dadosFinais = await response.json();
         let textoResposta = dadosFinais.choices[0].message.content;
 
-        // --- INÍCIO DO FILTRO À PROVA DE BALAS (IDÊNTICO AO ÁUDIO) ---
+        // --- INÍCIO DO FILTRO À PROVA DE BALAS (AGRESSIVO) ---
         
-        // 1. Remove qualquer pensamento da IA que vaze em tags <think>
+        // 1. Remove pensamentos internos comuns que o Qwen vaza em inglês
+        textoResposta = textoResposta.replace(/Wait,[\s\S]*/i, '');
+        textoResposta = textoResposta.replace(/Let's[\s\S]*/i, '');
         textoResposta = textoResposta.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
-        // 2. Procura capturar APENAS o texto que está entre [LAUDO] e [/LAUDO]
+        // 2. Tenta extrair apenas o laudo
         const regexLaudo = /\[LAUDO\]([\s\S]*?)\[\/LAUDO\]/i;
         const extraido = textoResposta.match(regexLaudo);
 
         if (extraido && extraido[1]) {
             textoResposta = extraido[1].trim();
         } else {
-            // Plano B de emergência: Corta tudo que vier antes do primeiro "1."
-            const inicioItem1 = textoResposta.indexOf("1.");
-            if (inicioItem1 !== -1) {
-                textoResposta = textoResposta.substring(inicioItem1);
+            // NOVO PLANO B MATADOR: Pega do "1." até o final da linha do "4." e descarta o resto do lixo em inglês
+            const matchNumeros = textoResposta.match(/1\.[\s\S]*?4\.[^\n]*/i);
+            if (matchNumeros) {
+                textoResposta = matchNumeros[0].trim();
+            } else {
+                // Fallback de segurança extrema
+                const inicioItem1 = textoResposta.indexOf("1.");
+                if (inicioItem1 !== -1) {
+                    textoResposta = textoResposta.substring(inicioItem1);
+                }
             }
         }
 
-        // 3. Limpeza final: Remove aspas soltas (evita o bug de sobrar apenas "and" ou aspas duplas)
+        // 3. Limpeza final
         textoResposta = textoResposta.replace(/^["']|["']$/g, '').trim();
         
         // --- FIM DO FILTRO ---
 
-        // Renderiza o resultado limpo
         resultBox.innerHTML = formatarTexto(textoResposta);
         resultBox.style.display = 'block';
  
-        // --- CORREÇÃO DO GATILHO DE ALERTA ---
         const linhasDoTexto = textoResposta.split('\n');
-        // Usa uma busca mais segura para não dar falso positivo na primeira linha vazia
         const primeiraLinha = (linhasDoTexto[0] || "").toUpperCase();
         
-        if(primeiraLinha.includes("FAKE") || primeiraLinha.includes("ENGANOSA") || primeiraLinha.includes("FORA DE CONTEXTO")) {
+        if(primeiraLinha.includes("FAKE") || primeiraLinha.includes("ENGANOSA") || primeiraLinha.includes("FORA DE CONTEXTO") || primeiraLinha.includes("SUSPEITO")) {
             resultBox.style.borderLeftColor = "#ff4d6d"; 
             document.body.classList.add('is-fake');
             mostrarPopup("CONTEÚDO FAKE DETECTADO", "fake");
@@ -616,7 +612,7 @@ async function analisarImagem() {
     } catch (error) {
         console.error("Erro no processamento:", error);
         if (error.message.includes("Rate limit")) {
-            alert("O radar está sobrecarregado (Limite de requisições atingido). Aguarde 10 segundos e tente novamente.");
+            alert("O radar está sobrecarregado (Limite atingido). Aguarde alguns segundos.");
             falarNarracao("Radar sobrecarregado. Aguarde alguns segundos.");
         } else {
             alert("Erro ao processar imagem: " + error.message);
