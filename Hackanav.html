@@ -556,6 +556,9 @@ async function analisarImagem() {
        // =========================================================
         // ETAPA 2: LIMPEZA E TRADUÇÃO (Mixtral arrumando a bagunça)
         // =========================================================
+        // =========================================================
+        // ETAPA 2: LIMPEZA E TRADUÇÃO (Gemma 2 arrumando a bagunça)
+        // =========================================================
         const promptFiltro = `
             Você é um Perito Forense Brasileiro. Seu trabalho é formatar dados brutos.
             Pegue a análise abaixo (que pode estar em inglês e ter lixo/pensamentos) e traduza TUDO para o Português do Brasil (pt-BR).
@@ -582,7 +585,7 @@ async function analisarImagem() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "mixtral-8x7b-32768", // Modelo Mixtral atualizado e estável
+                model: "gemma2-9b-it", // Modelo Gemma 2 da Google hospedado na Groq
                 messages: [
                     { role: "system", content: "Você gera apenas textos em pt-BR envoltos na tag [LAUDO]." },
                     { role: "user", content: promptFiltro }
@@ -593,7 +596,7 @@ async function analisarImagem() {
 
         if (!responseFiltro.ok) {
             const erroDataFiltro = await responseFiltro.json();
-            throw new Error("Falha na Etapa 2 (Mixtral): " + (erroDataFiltro.error?.message || "Erro desconhecido na API do Groq."));
+            throw new Error("Falha na Etapa 2 (Gemma 2): " + (erroDataFiltro.error?.message || "Erro desconhecido na API do Groq."));
         }
         
         const dadosFiltro = await responseFiltro.json();
