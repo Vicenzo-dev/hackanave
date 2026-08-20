@@ -491,11 +491,9 @@
         setTimeout(() => { popup.classList.remove('show'); }, 4000);
     }
 
+// ----- PROCESSAMENTO FORENSE BLINDADO (IMAGEM - QWEN) -----
 async function analisarImagem() {
-    if (!GROQ_API_KEY || GROQ_API_KEY === "COLE_SUA_CHAVE_AQUI") {
-        alert("Por favor, configure sua API Key diretamente no código (variável GROQ_API_KEY).");
-        return;
-    }
+    if (!imagemBase64Completa) return;
 
     const loading = document.getElementById('loading');
     const resultBox = document.getElementById('resultBox');
@@ -505,20 +503,18 @@ async function analisarImagem() {
     resultBox.style.display = 'none';
     analyzeBtn.disabled = true;
 
-    falarNarracao("Analisando pixels estruturais e metadados. Aguarde.");
+    falarNarracao("Iniciando varredura pericial da imagem.");
 
+    // Prompt reforçado focado na estrutura do laudo
     const promptContexto = `
-        IMPORTANTE: Você DEVE responder inteiramente em Português do Brasil (pt-BR). Não escreva NADA em inglês.
-        Atue estritamente como um Perito Forense e Checador de Fatos profissional analisando esta imagem.
-        
-        REGRA DE OURO: Não mostre seu processo de raciocínio. 
-        Você DEVE escrever o seu relatório final OBRIGATORIAMENTE dentro das tags [LAUDO] e [/LAUDO].
+        REGRA DE OURO: Você DEVE escrever o seu relatório final OBRIGATORIAMENTE dentro das tags [LAUDO] e [/LAUDO].
+        Não mostre seu processo de raciocínio. Responda APENAS com o laudo.
 
-        Formato exigido estritamente dentro das tags:
-        1. **Veredito Inicial**: ([VEREDITO]: VERDADEIRA, [VEREDITO]: FAKE NEWS, [VEREDITO]: FORA DE CONTEXTO ou [VEREDITO]: ENGANOSA).
-        2. **Análise de Elementos**: (Aponte sinais de manipulação, contradições ou erros textuais em português).
-        3. **Argumentação**: (Explique o contexto real conhecido desse fato ou imagem em português).
-        4. **Fonte**: (Onde encontrou a informação, se possível, em português).
+        Formato exigido dentro das tags:
+        1. **Veredito Inicial**: ([VEREDITO]: VERDADEIRA, [VEREDITO]: FAKE NEWS, [VEREDITO]: FORA DE CONTEXTO ou [VEREDITO]: ENGANOSA)
+        2. **Análise de Elementos**: (Aponte sinais de manipulação, contradições ou erros textuais em português)
+        3. **Argumentação**: (Explique o contexto real conhecido desse fato ou imagem em português)
+        4. **Fonte**: (Onde encontrou a informação, se possível, em português)
     `;
 
     try {
@@ -529,8 +525,13 @@ async function analisarImagem() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "qwen/qwen3.6-27b",
+                model: "qwen/qwen3.6-27b", // Mantido o Qwen conforme solicitado
                 messages: [
+                    {
+                        // Injetando uma regra de SISTEMA para travar o idioma
+                        role: "system",
+                        content: "Você é um Perito Forense Brasileiro. Você SÓ PODE FALAR EM PORTUGUÊS DO BRASIL (pt-BR). Qualquer outro idioma, incluindo Inglês, é ESTRITAMENTE PROIBIDO. Traduza absolutamente tudo que você 'ver' na imagem para o Português antes de responder."
+                    },
                     {
                         role: "user",
                         content: [
@@ -550,35 +551,46 @@ async function analisarImagem() {
 
         if (!response.ok) {
             const erroData = await response.json();
-            throw new Error(erroData.error?.message || "Erro na requisição");
+            throw new Error(erroData.error?.message || "Falha na análise da IA.");
         }
 
-        const dados = await response.json();
-        let textoResposta = dados.choices[0].message.content;
+        const dadosFinais = await response.json();
+        let textoResposta = dadosFinais.choices[0].message.content;
 
-        // Filtro à prova de balas
+        // --- INÍCIO DO FILTRO À PROVA DE BALAS ---
+        
+        // 1. Remove qualquer pensamento da IA que vaze em tags <think>
         textoResposta = textoResposta.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
+        // 2. Procura capturar APENAS o texto que está entre [LAUDO] e [/LAUDO]
         const regexLaudo = /\[LAUDO\]([\s\S]*?)\[\/LAUDO\]/i;
         const extraido = textoResposta.match(regexLaudo);
 
         if (extraido && extraido[1]) {
+            // Se a IA obedeceu e usou as tags, pegamos só o recheio limpo em português
             textoResposta = extraido[1].trim();
         } else {
+            // Plano B de emergência: Corta tudo que vier antes do primeiro "1."
             const inicioItem1 = textoResposta.indexOf("1.");
             if (inicioItem1 !== -1) {
                 textoResposta = textoResposta.substring(inicioItem1);
             }
         }
 
+        // 3. Limpeza final: Remove aspas soltas no início ou fim do texto
         textoResposta = textoResposta.replace(/^["']|["']$/g, '').trim();
         
+        // --- FIM DO FILTRO ---
+
+        // Renderiza o resultado limpo
         resultBox.innerHTML = formatarTexto(textoResposta);
         resultBox.style.display = 'block';
-        
+ 
+        // --- CORREÇÃO DO GATILHO DE ALERTA ---
+        // Pega apenas a primeira linha do laudo para decidir o alerta, evitando falsos positivos.
         const linhasDoTexto = textoResposta.split('\n');
         const primeiraLinha = linhasDoTexto[0].toUpperCase();
-
+        
         if(primeiraLinha.includes("FAKE") || primeiraLinha.includes("ENGANOSA") || primeiraLinha.includes("FORA DE CONTEXTO")) {
             resultBox.style.borderLeftColor = "#ff4d6d"; 
             document.body.classList.add('is-fake');
@@ -592,16 +604,16 @@ async function analisarImagem() {
         }
 
         setTimeout(() => {
-            falarNarracao("Relatório completo: " + textoResposta);
-        }, 4000);
+            falarNarracao("Relatório da análise: " + textoResposta);
+        }, 3500);
 
     } catch (error) {
-        console.error(error);
+        console.error("Erro no processamento:", error);
         if (error.message.includes("Rate limit")) {
             alert("O radar está sobrecarregado (Limite de tokens atingido). Aguarde 10 segundos e tente analisar novamente.");
             falarNarracao("Radar sobrecarregado. Aguarde alguns segundos.");
         } else {
-            alert("Erro na análise da Groq: " + error.message);
+            alert("Erro ao processar imagem: " + error.message);
             falarNarracao("Erro operacional na varredura da imagem.");
         }
     } finally {
