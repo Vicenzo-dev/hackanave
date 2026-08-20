@@ -609,6 +609,10 @@
         analyzeBtn.disabled = false;
     }
 }
+
+function formatarTexto(texto) {
+    return texto.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
 </script>
 
 </body>
