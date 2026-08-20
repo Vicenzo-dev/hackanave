@@ -460,85 +460,134 @@
     }
 
     // ----- PROCESSAMENTO FORENSE -----
-    async function analisarAudio() {
-        const loading = document.getElementById('loading');
-        const resultBox = document.getElementById('resultBox');
+ // ----- PROCESSAMENTO FORENSE BLINDADO -----
+async function analisarAudio() {
+    if (!arquivoAudio) return;
 
-        document.body.classList.remove('is-true', 'is-fake');
-        loading.style.display = 'block';
-        resultBox.style.display = 'none';
-        analyzeBtn.disabled = true;
+    const loading = document.getElementById('loading');
+    const resultBox = document.getElementById('resultBox');
 
-        falarNarracao("Processando verificação pericial.");
+    document.body.classList.remove('is-true', 'is-fake');
+    loading.style.display = 'block';
+    resultBox.style.display = 'none';
+    analyzeBtn.disabled = true;
 
-        try {
-            const formData = new FormData();
-            formData.append("file", arquivoAudio);
-            formData.append("model", "whisper-large-v3");
-            formData.append("language", "pt");
+    falarNarracao("Iniciando transcrição e varredura pericial do áudio.");
 
-            const transcreveResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${GROQ_API_KEY}` },
-                body: formData
-            });
+    try {
+        const formData = new FormData();
+        formData.append("file", arquivoAudio);
+        formData.append("model", "whisper-large-v3");
+        formData.append("language", "pt"); // Força transcrição em PT
 
-            if (!transcreveResponse.ok) throw new Error("Falha na transcrição.");
+        const transcreveResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${GROQ_API_KEY}` },
+            body: formData
+        });
 
-            const transcreveDados = await transcreveResponse.json();
-            const textoTranscrito = transcreveDados.text;
+        if (!transcreveResponse.ok) throw new Error("Falha na transcrição do áudio.");
 
-            const promptContexto = `Você é um Perito Forense Computacional. Analise: "${textoTranscrito}". Formato exigido: [VEREDITO]: SEGURO ou [VEREDITO]: CRÍTICO seguido de um parecer de 4 linhas.`;
+        const transcreveDados = await transcreveResponse.json();
+        const textoTranscrito = transcreveDados.text;
 
-            const respostaTexto = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${GROQ_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "meta-llama/llama-4-scout-17b-16e-instruct", 
-                    messages: [ { role: "user", content: promptContexto } ],
-                    temperature: 0.1
-                })
-            });
+        // Prompt reforçado para proibir o "thinking process"
+        const promptContexto = `
+            Atue como um Perito Forense Computacional. Analise a seguinte transcrição:
+            "${textoTranscrito}"
 
-            if (!respostaTexto.ok) throw new Error("Falha na análise.");
+            REGRA DE OURO: Não mostre seu processo de raciocínio. Responda APENAS em Português do Brasil.
+            Você DEVE escrever o seu relatório final OBRIGATORIAMENTE dentro das tags [LAUDO] e [/LAUDO].
 
-            const dadosFinais = await respostaTexto.json();
-            const textoResposta = dadosFinais.choices[0].message.content;
+            Formato exigido dentro das tags:
+            1. **Veredito Inicial**: ([VEREDITO]: SEGURO ou [VEREDITO]: CRÍTICO / SUSPEITO)
+            2. **Análise de Padrão de Fala**: (Sua análise detalhada aqui)
+            3. **Avaliação de Risco**: (Sua avaliação de risco aqui)
+            4. **Recomendação**: (Sua recomendação prática aqui)
+        `;
 
-            resultBox.innerHTML = formatarTexto(textoResposta);
-            resultBox.style.display = 'block';
-            
-            if(textoResposta.includes("[VEREDITO]: CRÍTICO")) {
-                resultBox.style.borderLeftColor = "#ff4d6d"; 
-                document.body.classList.add('is-fake');
-                mostrarPopup("ÁUDIO COM FORTES INDÍCIOS DE IA / FRAUDE", "fake");
-                falarNarracao("Atenção. Veredito crítico detectado.");
-            } else {
-                resultBox.style.borderLeftColor = "#10b981"; 
-                document.body.classList.add('is-true');
-                mostrarPopup("CONTEÚDO SEGURO / AUTÊNTICO", "verdadeiro");
-                falarNarracao("Análise concluída. Conteúdo seguro.");
+        const respostaTexto = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "qwen/qwen3.6-27b", // Mantém o que funciona para você
+                messages: [ { role: "user", content: promptContexto } ],
+                temperature: 0.1
+            })
+        });
+
+        if (!respostaTexto.ok) throw new Error("Falha na análise da IA.");
+
+        const dadosFinais = await respostaTexto.json();
+        let textoResposta = dadosFinais.choices[0].message.content;
+
+        // --- INÍCIO DO FILTRO À PROVA DE BALAS ---
+        
+        // 1. Remove qualquer pensamento da IA que vaze em tags <think>
+        textoResposta = textoResposta.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+        // 2. Procura capturar APENAS o texto que está entre [LAUDO] e [/LAUDO]
+        const regexLaudo = /\[LAUDO\]([\s\S]*?)\[\/LAUDO\]/i;
+        const extraido = textoResposta.match(regexLaudo);
+
+        if (extraido && extraido[1]) {
+            // Se a IA obedeceu e usou as tags, pegamos só o recheio limpo em português
+            textoResposta = extraido[1].trim();
+        } else {
+            // Plano B de emergência: Corta tudo que vier antes do primeiro "1."
+            const inicioItem1 = textoResposta.indexOf("1.");
+            if (inicioItem1 !== -1) {
+                textoResposta = textoResposta.substring(inicioItem1);
             }
-
-            setTimeout(() => {
-                falarNarracao("Relatório completo: " + textoResposta);
-            }, 4000);
-
-        } catch (error) {
-            console.error(error);
-            falarNarracao("Erro operacional na varredura.");
-        } finally {
-            loading.style.display = 'none';
-            analyzeBtn.disabled = false;
         }
-    }
 
-    function formatarTexto(texto) {
-        return texto.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // 3. Limpeza final: Remove aspas soltas no início ou fim do texto (evita o bug do "and")
+        textoResposta = textoResposta.replace(/^["']|["']$/g, '').trim();
+        
+        // --- FIM DO FILTRO ---
+
+        // Renderiza o resultado limpo
+        resultBox.innerHTML = formatarTexto(textoResposta);
+        resultBox.style.display = 'block';
+ 
+        // --- CORREÇÃO DO GATILHO DE ALERTA ---
+        // Pega apenas a primeira linha do laudo para decidir o alerta, evitando falsos positivos.
+        const linhasDoTexto = textoResposta.split('\n');
+        const primeiraLinha = linhasDoTexto[0].toUpperCase();
+        
+        if(primeiraLinha.includes("CRÍTICO") || primeiraLinha.includes("SUSPEITO") || primeiraLinha.includes("GOLPE")) {
+            resultBox.style.borderLeftColor = "#ff4d6d"; 
+            document.body.classList.add('is-fake');
+            mostrarPopup("ALERT: ÁUDIO COM INDÍCIOS DE FRAUDE / ROBÔ", "fake");
+            falarNarracao("Atenção. Áudio suspeito ou com indícios de fraude detectado.");
+        } else {
+            resultBox.style.borderLeftColor = "#10b981"; 
+            document.body.classList.add('is-true');
+            mostrarPopup("ÁUDIO SEGURO / AUTÊNTICO", "verdadeiro");
+            falarNarracao("Análise concluída. O áudio é seguro.");
+        }
+
+        setTimeout(() => {
+            falarNarracao("Relatório da análise: " + textoResposta);
+        }, 3500);
+
+    } catch (error) {
+        console.error("Erro no processamento:", error);
+        falarNarracao("Erro operacional na varredura de áudio.");
+        alert("Erro ao processar áudio: " + error.message);
+    } finally {
+        loading.style.display = 'none';
+        analyzeBtn.disabled = false;
     }
+}
+
+// Função auxiliar mantida aqui para você copiar o bloco completo sem quebrar nada
+function formatarTexto(texto) {
+    return texto.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
 </script>
 
 </body>

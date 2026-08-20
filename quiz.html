@@ -34,6 +34,7 @@
             border-radius: 20px;
             padding: 25px;
             backdrop-filter: blur(10px);
+            text-align: center;
         }
 
         .header-info { display: flex; justify-content: space-between; font-family: 'Orbitron'; font-size: 0.7rem; color: var(--neon-blue); margin-bottom: 10px; }
@@ -58,8 +59,7 @@
             border: 1px solid var(--neon-purple);
         }
 
-        .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; min-height: 60px; }
-
+        .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; min-height: 60px; text-align: left; }
         .options { display: flex; flex-direction: column; gap: 10px; }
 
         .opt-btn {
@@ -88,10 +88,28 @@
             font-family: 'Orbitron';
             font-weight: bold;
             cursor: pointer;
-            display: none;
+            transition: 0.3s;
         }
+        .next-btn:hover { background: var(--neon-pink); box-shadow: 0 0 15px var(--neon-pink); }
 
-        /* TELA FINAL */
+        #startScreen { display: block; }
+        .input-id {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--neon-blue);
+            background: rgba(0, 240, 255, 0.05);
+            color: white;
+            font-family: 'Orbitron';
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .input-id:focus { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+
+        #quiz-content { display: none; text-align: left; }
         #resultScreen { text-align: center; display: none; }
         .score-circle {
             width: 120px; height: 120px;
@@ -105,11 +123,45 @@
             font-family: 'Orbitron';
             box-shadow: 0 0 20px var(--neon-blue);
         }
+
+        .ranking-container {
+            margin-top: 25px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 8px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 3px solid var(--neon-blue);
+            font-family: 'Orbitron';
+            font-size: 0.85rem;
+        }
+        .ranking-item.me {
+            border-left: 3px solid var(--neon-pink);
+            background: rgba(255, 0, 127, 0.15);
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.3);
+        }
     </style>
 </head>
 <body>
 
     <div class="quiz-card">
+        
+        <div id="startScreen">
+            <h1 style="font-family: 'Orbitron'; color: var(--neon-purple); margin-bottom: 10px;">QUIZ ACADEMY</h1>
+            <p style="color: #a295c0; font-size: 0.9rem;">Insira seu ID para registrar sua pontuação no Ranking Global e inicie a missão.</p>
+            
+            <input type="text" id="playerId" class="input-id" placeholder="DIGITE SEU NICKNAME..." maxlength="15">
+            <button class="next-btn" onclick="iniciarMissao()">COMEÇAR MISSÃO</button>
+        </div>
+
         <div id="quiz-content">
             <div class="header-info">
                 <span id="modLabel">Módulo 1</span>
@@ -123,19 +175,33 @@
 
             <div class="question" id="qText">Carregando...</div>
             <div class="options" id="optionsBox"></div>
-            <button class="next-btn" id="nextBtn" onclick="nextAction()">PRÓXIMA</button>
+            <button class="next-btn" id="nextBtn" style="display: none;" onclick="nextAction()">PRÓXIMA</button>
         </div>
 
         <div id="resultScreen">
             <h2 style="font-family: 'Orbitron'; color: var(--neon-blue);">MISSÃO CONCLUÍDA!</h2>
             <div class="score-circle" id="finalScore">0</div>
             <p id="scoreMsg">Ótimo trabalho!</p>
-            <p style="margin-top: 10px; color: #a295c0;">Você concluiu todos os módulos de treinamento contra desinformação.</p>
-            <button class="next-btn" style="display: block;" onclick="location.href='inicio.html'">VOLTAR AO INÍCIO</button>
+            
+            <div class="ranking-container">
+                <h3 style="color: var(--neon-pink); font-family: 'Orbitron'; margin-bottom: 15px;">🏆 RANKING GLOBAL</h3>
+                <div id="loadingRanking" style="color: #a295c0; font-size: 0.9rem;">Sincronizando com a nuvem... aguarde.</div>
+                
+                <ul id="rankingList" style="list-style: none; padding: 0; margin: 0;">
+                </ul>
+            </div>
+
+            <button class="next-btn" onclick="location.href='inicio.html'">VOLTAR AO INÍCIO</button>
         </div>
+
     </div>
 
     <script>
+        const API_KEY = "$2a$10$Ypu9rqXClbXv4ah4xLt.geYK.9B1AlgSmj.O644.5Hsimuu25F5bi"; 
+        const BIN_ID = "6a865279f5f4af5e292afc12";   
+        
+        let jogadorId = "Anônimo";
+
         const modules = {
             1: {
                 video: "https://www.youtube.com/embed/TMQs5Tl838U", 
@@ -188,6 +254,19 @@
         let currentQ = 0;
         let score = 0;
         let answered = false;
+        const totalQuestoesGlobal = 30;
+
+        function iniciarMissao() {
+            const input = document.getElementById('playerId').value.trim();
+            if(input === "") {
+                alert("Por favor, digite um Nickname ou ID!");
+                return;
+            }
+            jogadorId = input;
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('quiz-content').style.display = 'block';
+            loadQuestion();
+        }
 
         function loadQuestion() {
             answered = false;
@@ -210,8 +289,7 @@
                 optionsBox.appendChild(btn);
             });
 
-            const totalQ = 30;
-            const progress = (( (currentMod-1) * 10 + currentQ) / totalQ) * 100;
+            const progress = (((currentMod - 1) * 10 + currentQ) / totalQuestoesGlobal) * 100;
             document.getElementById('progressFill').style.width = progress + '%';
         }
 
@@ -222,12 +300,15 @@
             
             if(idx === correct) {
                 btn.classList.add('correct');
-                score++;
+                score += 10;
             } else {
                 btn.classList.add('wrong');
                 document.querySelectorAll('.opt-btn')[correct].classList.add('correct');
             }
             document.getElementById('nextBtn').style.display = 'block';
+            
+            const progress = (((currentMod - 1) * 10 + currentQ + 1) / totalQuestoesGlobal) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
         }
 
         function nextAction() {
@@ -248,11 +329,73 @@
             document.getElementById('quiz-content').style.display = 'none';
             document.getElementById('resultScreen').style.display = 'block';
             document.getElementById('finalScore').innerText = score;
-            const msg = score > 25 ? "Excepcional! Você é um mestre da verdade." : score > 15 ? "Bom trabalho! Continue se informando." : "Precisa praticar mais! Estude os módulos novamente.";
+            
+            const msg = score >= 250 ? "Excepcional! Você é um mestre da verdade." : score >= 150 ? "Bom trabalho! Continue se informando." : "Precisa praticar mais! Estude os módulos novamente.";
             document.getElementById('scoreMsg').innerText = msg;
+
+            enviarParaNuvem(jogadorId, score);
         }
 
-        loadQuestion();
+        async function enviarParaNuvem(nome, pontos) {
+            const ul = document.getElementById('rankingList');
+            const loading = document.getElementById('loadingRanking');
+            
+            if(API_KEY === "COLE_SUA_API_KEY_AQUI") {
+                loading.innerText = "⚠️ MODO LOCAL (Configure o JSONBin.io no código para Ranking Global Online)";
+                let ranking = JSON.parse(localStorage.getItem('quizGlobal')) || [];
+                ranking.push({ nome: nome, pontos: pontos });
+                ranking.sort((a, b) => b.pontos - a.pontos);
+                ranking = ranking.slice(0, 10);
+                localStorage.setItem('quizGlobal', JSON.stringify(ranking));
+                renderizarRanking(ranking, nome);
+                return;
+            }
+
+            try {
+                let resGet = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                let data = await resGet.json();
+                let rankingOnline = data.record.ranking || [];
+
+                rankingOnline.push({ nome: nome, pontos: pontos });
+
+                rankingOnline.sort((a, b) => b.pontos - a.pontos);
+                rankingOnline = rankingOnline.slice(0, 10);
+
+                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify({ ranking: rankingOnline })
+                });
+
+                loading.style.display = 'none';
+                renderizarRanking(rankingOnline, nome);
+
+            } catch (erro) {
+                loading.innerText = "Erro de conexão com o Ranking Global.";
+                console.error(erro);
+            }
+        }
+
+        function renderizarRanking(dados, nomeAtual) {
+            const ul = document.getElementById('rankingList');
+            ul.innerHTML = '';
+            
+            dados.forEach((jogador, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item' + (jogador.nome === nomeAtual ? ' me' : '');
+                
+                li.innerHTML = `
+                    <span>#${index + 1} ${jogador.nome.toUpperCase()}</span> 
+                    <span style="color: var(--neon-blue);">${jogador.pontos} XP</span>
+                `;
+                ul.appendChild(li);
+            });
+        }
     </script>
 </body>
 </html>

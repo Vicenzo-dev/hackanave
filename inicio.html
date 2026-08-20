@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hacka Nav - Hub Central</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght=700;900&family=Poppins:wght=300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-deep: #130924; 
@@ -27,7 +27,7 @@
             color: var(--text-white);
             min-height: 100vh;
             display: flex;
-            flex-direction: column; /* Alterado para permitir rolagem natural */
+            flex-direction: column;
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
@@ -37,7 +37,6 @@
 
         body.large-fonts { --font-scale: 1.2; }
 
-        /* ----- CONTROLES TOPO ----- */
         .top-controls-container {
             position: fixed;
             top: 15px;
@@ -78,7 +77,6 @@
             background: linear-gradient(45deg, var(--neon-purple), var(--neon-blue));
         }
 
-        /* INDICADOR DE VOZ */
         .voice-input-indicator {
             display: inline-block;
             margin-bottom: 15px;
@@ -102,7 +100,6 @@
             box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
         }
 
-        /* GAVETA DE TUTORIAIS */
         .tutorial-drawer {
             position: fixed;
             top: 0;
@@ -126,7 +123,6 @@
         .video-item h4 { font-family: 'Orbitron'; font-size: 0.8rem; color: var(--neon-blue); margin-bottom: 10px; }
         .video-frame { width: 100%; aspect-ratio: 16/9; border-radius: 12px; border: 1px solid var(--neon-purple); }
 
-        /* HUB CENTRAL */
         .hub-container {
             width: 100%;
             max-width: 900px;
@@ -136,8 +132,8 @@
             border-radius: 24px;
             padding: calc(60px * var(--font-scale)) 20px;
             text-align: center;
-            margin-top: 10vh; /* Centraliza visualmente no topo */
-            margin-bottom: 100px;
+            margin-top: 10vh;
+            margin-bottom: 40px;
             z-index: 10;
         }
 
@@ -177,11 +173,50 @@
         .card-title { font-family: 'Orbitron'; font-size: 1rem; color: var(--neon-blue); margin-bottom: 10px; }
         .card-desc { font-size: 0.85rem; opacity: 0.7; line-height: 1.5; }
 
-        /* ----- SEÇÃO DIRIGENTES (FOTO ÚNICA E GRANDE) ----- */
+        .scoreboard-section {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 0, 127, 0.3);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 50px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .scoreboard-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: var(--neon-pink);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 12px 20px;
+            border-radius: 10px;
+            border-left: 3px solid var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+        }
+
         .equipe-section {
             width: 100%;
             max-width: 1100px;
-            padding: 80px 20px;
+            padding: 40px 20px 80px 20px;
             text-align: center;
         }
 
@@ -302,6 +337,13 @@
         </div>
     </div>
 
+    <div class="scoreboard-section">
+        <h2 class="scoreboard-title">🏆 RANKING GLOBAL | QUIZ</h2>
+        <div id="loadingHubRanking" style="color: #a295c0; font-size: 0.85rem;">Carregando pontuações da nuvem...</div>
+        <ul id="hubRankingList" class="ranking-list">
+        </ul>
+    </div>
+
     <section class="equipe-section">
         <h2 class="equipe-titulo">Equipe Dirigente</h2>
         <div class="membro-foto-container">
@@ -324,6 +366,56 @@
     </section>
 
     <script>
+        const API_KEY = "$2a$10$Ypu9rqXClbXv4ah4xLt.geYK.9B1AlgSmj.O644.5Hsimuu25F5bi"; 
+        const BIN_ID = "6a865279f5f4af5e292afc12";    
+
+        async function carregarRankingHub() {
+            const ul = document.getElementById('hubRankingList');
+            const loading = document.getElementById('loadingHubRanking');
+
+            if(API_KEY === "COLE_SUA_API_KEY_AQUI") {
+                loading.innerText = "⚠️ Modo local (Configure o JSONBin.io para ativar na nuvem)";
+                let localData = JSON.parse(localStorage.getItem('quizGlobal')) || [];
+                renderizarHubRanking(localData);
+                return;
+            }
+
+            try {
+                let res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                let data = await res.json();
+                let ranking = data.record.ranking || [];
+                
+                loading.style.display = 'none';
+                renderizarHubRanking(ranking);
+            } catch (e) {
+                loading.innerText = "Erro ao carregar o ranking global.";
+            }
+        }
+
+        function renderizarHubRanking(dados) {
+            const ul = document.getElementById('hubRankingList');
+            ul.innerHTML = '';
+
+            if(dados.length === 0) {
+                ul.innerHTML = '<li style="text-align:center; color:#a295c0; font-size:0.8rem; font-family:\'Orbitron\';">Nenhum jogador no ranking ainda. Seja o primeiro!</li>';
+                return;
+            }
+
+            dados.forEach((j, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+                li.innerHTML = `
+                    <span>#${index + 1} ${j.nome.toUpperCase()}</span>
+                    <span style="color: var(--neon-blue);">${j.pontos} XP</span>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        carregarRankingHub();
+
         let modoAtivo = null;
         let synth = window.speechSynthesis;
         let recognition = null;

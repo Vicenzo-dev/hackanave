@@ -312,7 +312,7 @@
     <div id="navAlertPopup" class="nav-popup"></div>
 
 <script>
-    const GROQ_API_KEY = "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"; // Insira sua chave de API aqui se necessário
+    const GROQ_API_KEY = "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"; 
     const fileInput = document.getElementById('fileInput');
     const preview = document.getElementById('preview');
     const analyzeBtn = document.getElementById('analyzeBtn');
@@ -325,7 +325,6 @@
     let recognition = null;
     let micIniciado = false;
 
-    // ----- INICIALIZAÇÃO CORRIGIDA DO MICROFONE -----
     function inicializarMicrofone() {
         if (micIniciado) return;
 
@@ -333,9 +332,6 @@
             const SpeechObj = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechObj();
             recognition.lang = 'pt-BR';
-            
-            // Solução para o pop-up repetido: continuous como TRUE mantém a sessão ativa 
-            // sem precisar fechar e reabrir o microfone a cada pausa.
             recognition.continuous = true; 
             recognition.interimResults = false;
 
@@ -356,7 +352,6 @@
             };
 
             recognition.onresult = function(event) {
-                // Captura a última frase dita para evitar conflito em loops contínuos
                 const indexAtual = event.resultIndex;
                 const falaUsuario = event.results[indexAtual][0].transcript.toLowerCase().replace(/[\.\?,]/g, '').trim();
                 console.log("Comando identificado:", falaUsuario);
@@ -364,9 +359,8 @@
                 if (falaUsuario.includes("voltar") || falaUsuario.includes("início") || falaUsuario.includes("inicio")) {
                     falarNarracao("A retornar ao módulo inicial.");
                     setTimeout(() => {
-                        // Altera para o nome exato do teu arquivo de menu (ex: Hackanav.html ou inicio.html)
                         window.location.href = "inicio.html"; 
-                    }, 1500); // Aguarda 1,5 segundos para que o utilizador ouça a confirmação por voz antes de mudar de página
+                    }, 1500);
                     return;
                 }
                 
@@ -381,7 +375,6 @@
                 }
             };
 
-            // O encerramento agora só acontece se houver falha crítica do navegador
             recognition.onend = function() {
                 if (micIniciado && modoAtivo === 'cego') {
                     try { recognition.start(); } catch(e){}
@@ -395,7 +388,6 @@
         }
     }
 
-    // Gatilhos globais de inicialização do microfone
     window.addEventListener('click', inicializarMicrofone);
     window.addEventListener('keydown', function(e) {
         inicializarMicrofone();
@@ -404,7 +396,6 @@
         }
     });
 
-    // ----- GESTÃO DE MODOS DE ACESSIBILIDADE -----
     function toggleModo(modo) {
         if(synth) synth.cancel();
 
@@ -436,7 +427,6 @@
         }
     }
 
-    // ----- SÍNTESE DE VOZ (NARRAÇÃO) -----
     function falarNarracao(texto) {
         if(!synth || (modoAtivo !== 'idoso' && modoAtivo !== 'cego')) return;
         synth.cancel(); 
@@ -446,27 +436,51 @@
         synth.speak(utterance);
     }
 
-    // ----- CARREGAMENTO DO ARQUIVO -----
+    // Leitura e Redimensionamento Automático (Evita estouro de tokens)
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(readerEvent) {
-                preview.src = readerEvent.target.result;
-                preview.style.display = 'block';
-                imagemBase64Completa = readerEvent.target.result;
-                analyzeBtn.disabled = false;
-                uploadText.innerText = `Arquivo carregado: ${file.name}`;
-                falarNarracao(`Imagem ${file.name} carregada e pronta para varredura.`);
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Reduz se for muito grande para poupar tokens da API
+                    const maxDim = 1024;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    imagemBase64Completa = canvas.toDataURL('image/jpeg', 0.8);
+                    preview.src = imagemBase64Completa;
+                    preview.style.display = 'block';
+                    analyzeBtn.disabled = false;
+                    uploadText.innerText = `Arquivo carregado: ${file.name}`;
+                    falarNarracao(`Imagem ${file.name} carregada e pronta para varredura.`);
+                }
+                img.src = readerEvent.target.result;
             }
             reader.readAsDataURL(file);
         }
     });
 
-    // ----- POPUP ALERTA -----
     function mostrarPopup(mensagem, tipo) {
         const popup = document.getElementById('navAlertPopup');
-        popup.innerText = message = mensagem;
+        popup.innerText = mensagem;
         popup.className = 'nav-popup'; 
         
         if(tipo === 'verdadeiro') popup.classList.add('pop-verde');
@@ -476,7 +490,6 @@
         setTimeout(() => { popup.classList.remove('show'); }, 4000);
     }
 
-    // ----- ANÁLISE PRINCIPAL DA IA -----
     async function analisarImagem() {
         if (!GROQ_API_KEY || GROQ_API_KEY === "COLE_SUA_CHAVE_AQUI") {
             alert("Por favor, configure sua API Key diretamente no código (variável GROQ_API_KEY).");
@@ -497,11 +510,14 @@
             Analise esta imagem cuidadosamente (pode ser print, foto, meme ou notícia).
             Aja como um checador de fatos profissional.
             
-            Responda rigorosamente em português estruturando assim:
-            1. **Veredito Inicial**: (Diga se hay indícios de ser FAKE NEWS, VERDADEIRA, FORA DE CONTEXTO ou ENGANOSA).
+            REGRA DE OURO: Não mostre seu processo de raciocínio. Responda APENAS em Português do Brasil.
+            Você DEVE escrever o seu relatório final OBRIGATORIAMENTE dentro das tags [LAUDO] e [/LAUDO].
+
+            Formato exigido dentro das tags:
+            1. **Veredito Inicial**: ([VEREDITO]: VERDADEIRA, [VEREDITO]: FAKE NEWS, [VEREDITO]: FORA DE CONTEXTO ou [VEREDITO]: ENGANOSA).
             2. **Análise de Elementos**: (Aponte sinais de manipulação, contradições ou erros textuais).
             3. **Argumentação**: (Explique o contexto real conhecido desse fato ou imagem).
-            4. **fonte**:(onde encontrou a informação, se possível).
+            4. **Fonte**: (Onde encontrou a informação, se possível).
         `;
 
         try {
@@ -512,7 +528,7 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: "meta-llama/llama-4-scout-17b-16e-instruct", 
+                    model: "qwen/qwen3.6-27b",
                     messages: [
                         {
                             role: "user",
@@ -537,18 +553,36 @@
             }
 
             const dados = await response.json();
-            const textoResposta = dados.choices[0].message.content;
+            let textoResposta = dados.choices[0].message.content;
 
+            // Filtro à prova de balas
+            textoResposta = textoResposta.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+            const regexLaudo = /\[LAUDO\]([\s\S]*?)\[\/LAUDO\]/i;
+            const extraido = textoResposta.match(regexLaudo);
+
+            if (extraido && extraido[1]) {
+                textoResposta = extraido[1].trim();
+            } else {
+                const inicioItem1 = textoResposta.indexOf("1.");
+                if (inicioItem1 !== -1) {
+                    textoResposta = textoResposta.substring(inicioItem1);
+                }
+            }
+
+            textoResposta = textoResposta.replace(/^["']|["']$/g, '').trim();
+            
             resultBox.innerHTML = formatarTexto(textoResposta);
             resultBox.style.display = 'block';
             
-            const upperResposta = textoResposta.toUpperCase();
+            const linhasDoTexto = textoResposta.split('\n');
+            const primeiraLinha = linhasDoTexto[0].toUpperCase();
 
-            if(upperResposta.includes("FAKE") || upperResposta.includes("ENGANOSA")) {
+            if(primeiraLinha.includes("FAKE") || primeiraLinha.includes("ENGANOSA") || primeiraLinha.includes("FORA DE CONTEXTO")) {
                 resultBox.style.borderLeftColor = "#ff4d6d"; 
                 document.body.classList.add('is-fake');
                 mostrarPopup("CONTEÚDO FAKE DETECTADO", "fake");
-                falarNarracao("Atenção. Conteúdo fake detectado.");
+                falarNarracao("Atenção. Conteúdo fake ou enganoso detectado.");
             } else {
                 resultBox.style.borderLeftColor = "#10b981"; 
                 document.body.classList.add('is-true');
@@ -562,8 +596,13 @@
 
         } catch (error) {
             console.error(error);
-            alert("Erro na análise da Groq: " + error.message);
-            falarNarracao("Erro operacional na varredura da imagem.");
+            if (error.message.includes("Rate limit")) {
+                alert("O radar está sobrecarregado (Limite de tokens atingido). Aguarde 10 segundos e tente analisar novamente.");
+                falarNarracao("Radar sobrecarregado. Aguarde alguns segundos.");
+            } else {
+                alert("Erro na análise da Groq: " + error.message);
+                falarNarracao("Erro operacional na varredura da imagem.");
+            }
         } finally {
             loading.style.display = 'none';
             analyzeBtn.disabled = false;
