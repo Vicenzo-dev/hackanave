@@ -491,7 +491,7 @@
         setTimeout(() => { popup.classList.remove('show'); }, 4000);
     }
 
-    async function analisarImagem() {
+   async function analisarImagem() {
     if (!GROQ_API_KEY || GROQ_API_KEY === "COLE_SUA_CHAVE_AQUI") {
         alert("Por favor, configure sua API Key diretamente no código (variável GROQ_API_KEY).");
         return;
@@ -529,7 +529,7 @@
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.2-90b-vision-preview", // CORRIGIDO PARA UM MODELO DE VISÃO DA GROQ
+                model: "qwen/qwen3.6-27b", // ATUALIZADO PARA O MODELO ATIVO QUE SUPORTA VISÃO
                 messages: [
                     {
                         role: "user",
